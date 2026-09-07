@@ -1,0 +1,14 @@
+---
+- name: Demonstrate OS specific tasks
+  hosts: linux_servers
+
+  tasks:
+    - name: Show RHEL message
+      ansible.builtin.debug:
+        msg: "This server is running Red Hat Enterprise Linux"
+      when: ansible_distribution == "RedHat"
+
+    - name: Show Ubuntu message
+      ansible.builtin.debug:
+        msg: "This server is running Ubuntu"
+      when: ansible_distribution == "Ubuntu"

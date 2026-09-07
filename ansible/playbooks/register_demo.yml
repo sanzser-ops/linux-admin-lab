@@ -1,0 +1,14 @@
+---
+- name: Demonstrate registered variables
+  hosts: linux_servers
+
+  tasks:
+
+    - name: Check uptime
+      ansible.builtin.command: uptime
+      register: uptime_result
+      changed_when: false
+
+    - name: Display uptime
+      ansible.builtin.debug:
+        msg: "{{ uptime_result.stdout }}"

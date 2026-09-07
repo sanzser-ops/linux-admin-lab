@@ -1,0 +1,11 @@
+---
+- name: Manage packages by operating system
+  hosts: linux_servers
+  become: true
+
+  tasks:
+
+    - name: Install tree
+      ansible.builtin.package:
+        name: tree
+        state: present

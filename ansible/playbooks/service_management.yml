@@ -1,0 +1,20 @@
+---
+- name: Manage SSH service
+  hosts: linux_servers
+  become: true
+
+  tasks:
+
+    - name: Ensure SSH is running on Ubuntu
+      ansible.builtin.service:
+        name: ssh
+        state: started
+        enabled: true
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Ensure SSH is running on RHEL
+      ansible.builtin.service:
+        name: sshd
+        state: started
+        enabled: true
+      when: ansible_distribution == "RedHat"

@@ -1,0 +1,50 @@
+- name: Demonstrate troubleshooting workflow
+  hosts: linux_servers
+  gather_facts: true
+  become: true
+
+  tasks:
+
+    - name: Check important services
+      ansible.builtin.command: "systemctl is-active {{ item }}"
+      register: service_status
+      changed_when: false
+      failed_when: false
+      loop:
+        - sshd
+        - "{{ scheduler_service }}"
+
+    - name: Display service summary
+      ansible.builtin.debug:
+        msg: "{{ item.item }} -> {{ item.stdout }}"
+      loop: "{{ service_status.results }}"
+
+    - name: Report inactive services
+      ansible.builtin.debug:
+        msg: "WARNING: {{ item.item }} is not active!"
+      loop: "{{ service_status.results }}"
+      when: item.stdout != "active"
+
+    - name: Start inactive services
+      ansible.builtin.systemd_service:
+        name: "{{ item.item }}"
+        state: started
+      loop: "{{ service_status.results }}"
+      when: item.stdout != "active"
+
+    - name: Wait for services to become active
+      ansible.builtin.command: "systemctl is-active {{ item.item }}"
+      register: service_start_check
+      changed_when: false
+      failed_when: false
+      retries: 30
+      delay: 2
+      until: service_start_check.stdout == "active"
+      loop: "{{ service_status.results }}"
+      when: item.stdout != "active"
+
+    - name: Display final service status
+      ansible.builtin.debug:
+        msg: "{{ item.item }} -> {{ item.stdout }}"
+      loop: "{{ service_start_check.results }}"
+      when: item.stdout is defined

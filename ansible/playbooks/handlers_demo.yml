@@ -1,0 +1,23 @@
+---
+- name: Demonstrate Ansible handlers
+  hosts: linux_servers
+  become: true
+
+  tasks:
+
+    - name: Create application configuration
+      ansible.builtin.copy:
+        content: |
+          application_name=linux-admin-lab
+          environment=lab
+        dest: /etc/linux-admin-lab.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Configuration changed
+
+  handlers:
+
+    - name: Configuration changed
+      ansible.builtin.debug:
+        msg: "Configuration changed - handler executed"

@@ -1,0 +1,23 @@
+---
+- name: Display system information
+  ansible.builtin.debug:
+    msg:
+      - "Hostname: {{ ansible_hostname }}"
+      - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - "Kernel: {{ ansible_kernel }}"
+      - "Memory: {{ ansible_memtotal_mb }} MB"
+      - "CPU cores: {{ ansible_processor_vcpus }}"
+
+- name: Display filesystem information
+  ansible.builtin.debug:
+    msg: "{{ item.mount }} - {{ (item.size_total / 1073741824) | round(1) }} GB total, {{ (item.size_available / 1073741824) | round(1) }} GB available"
+  loop: "{{ ansible_mounts }}"
+
+- name: Check root filesystem usage
+  ansible.builtin.debug:
+    msg: >-
+      Root filesystem usage:
+      {{ ((item.size_total - item.size_available) / item.size_total * 100) | round(1) }}%
+      - OK
+  loop: "{{ ansible_mounts }}"
+  when: item.mount == "/"

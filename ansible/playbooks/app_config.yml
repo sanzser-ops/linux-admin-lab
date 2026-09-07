@@ -1,0 +1,7 @@
+---
+- name: Deploy application configuration
+  hosts: linux_servers
+  become: true
+
+  roles:
+    - app_config

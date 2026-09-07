@@ -1,0 +1,9 @@
+---
+- name: Generate application configuration
+  ansible.builtin.template:
+    src: app.conf.j2
+    dest: /etc/app.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Configuration changed

@@ -1,0 +1,4 @@
+---
+- name: Configuration changed
+  ansible.builtin.debug:
+    msg: "Application configuration changed - handler executed"

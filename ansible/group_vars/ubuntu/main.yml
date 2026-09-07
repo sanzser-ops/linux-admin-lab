@@ -1,0 +1,4 @@
+---
+package_manager: apt
+app_environment: development
+scheduler_service: cron

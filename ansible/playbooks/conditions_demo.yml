@@ -1,0 +1,20 @@
+---
+- name: Demonstrate conditions
+  hosts: linux_servers
+
+  tasks:
+
+    - name: Check root filesystem usage
+      ansible.builtin.command: df -P /
+      register: disk_result
+      changed_when: false
+
+    - name: Display disk check result
+      ansible.builtin.debug:
+        msg: "Disk check completed successfully"
+      when: disk_result.rc == 0
+
+    - name: Display disk check failure
+      ansible.builtin.debug:
+        msg: "Disk check failed"
+      when: disk_result.rc != 0

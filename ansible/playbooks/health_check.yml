@@ -1,0 +1,7 @@
+---
+- name: Linux server health check
+  hosts: linux_servers
+  gather_facts: true
+
+  roles:
+    - health_check

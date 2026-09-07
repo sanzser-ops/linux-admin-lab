@@ -1,0 +1,12 @@
+---
+- name: Demonstrate group variables
+  hosts: linux_servers
+
+  tasks:
+
+    - name: Display application configuration
+      ansible.builtin.debug:
+        msg:
+          - "Application: {{ app_name }}"
+          - "Environment: {{ app_environment }}"
+          - "Hostname: {{ ansible_hostname }}"

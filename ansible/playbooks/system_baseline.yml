@@ -1,0 +1,10 @@
+---
+- name: Apply basic Linux system baseline
+  hosts: linux_servers
+  become: true
+
+  tasks:
+    - name: Ensure vim is installed
+      ansible.builtin.package:
+        name: vim
+        state: present
