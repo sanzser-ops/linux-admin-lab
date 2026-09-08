@@ -1,0 +1,37 @@
+---
+- name: Install and configure Grafana
+  hosts: rhel-server-01
+  become: true
+
+  tasks:
+
+    - name: Add Grafana repository
+      ansible.builtin.yum_repository:
+        name: grafana
+        description: Grafana repository
+        baseurl: https://rpm.grafana.com
+        enabled: true
+        gpgcheck: true
+        gpgkey: https://rpm.grafana.com/gpg.key
+
+    - name: Install Grafana
+      ansible.builtin.dnf:
+        name: grafana
+        state: present
+
+    - name: Enable and start Grafana
+      ansible.builtin.systemd_service:
+        name: grafana-server
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Check Grafana status
+      ansible.builtin.command:
+        cmd: systemctl is-active grafana-server
+      register: grafana_status
+      changed_when: false
+
+    - name: Display Grafana status
+      ansible.builtin.debug:
+        msg: "Grafana status: {{ grafana_status.stdout }}"

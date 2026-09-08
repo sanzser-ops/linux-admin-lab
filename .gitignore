@@ -1,0 +1,15 @@
+# Ansible Vault secrets
+ansible/group_vars/all/vault.yml
+
+# Ansible temporary files
+*.retry
+
+# Python virtual environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# OS/editor files
+.DS_Store
+*.swp

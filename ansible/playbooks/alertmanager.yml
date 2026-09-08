@@ -1,0 +1,157 @@
+---
+- name: Install and configure Alertmanager
+  hosts: rhel-server-01
+  become: true
+
+  vars:
+    alertmanager_version: "0.29.0"
+    alertmanager_user: "alertmanager"
+    alertmanager_group: "alertmanager"
+    alertmanager_install_dir: "/opt/alertmanager"
+    alertmanager_config_dir: "/etc/alertmanager"
+    alertmanager_data_dir: "/var/lib/alertmanager"
+
+  tasks:
+
+    - name: Create Alertmanager group
+      ansible.builtin.group:
+        name: "{{ alertmanager_group }}"
+        state: present
+
+    - name: Create Alertmanager user
+      ansible.builtin.user:
+        name: "{{ alertmanager_user }}"
+        group: "{{ alertmanager_group }}"
+        system: true
+        shell: /sbin/nologin
+        create_home: false
+
+    - name: Create Alertmanager directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ alertmanager_user }}"
+        group: "{{ alertmanager_group }}"
+        mode: "0755"
+      loop:
+        - "{{ alertmanager_install_dir }}"
+        - "{{ alertmanager_config_dir }}"
+        - "{{ alertmanager_data_dir }}"
+
+    - name: Download Alertmanager
+      ansible.builtin.get_url:
+        url: "https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
+        dest: "/tmp/alertmanager-{{ alertmanager_version }}.tar.gz"
+        mode: "0644"
+
+    - name: Create temporary extraction directory
+      ansible.builtin.file:
+        path: "/tmp/alertmanager-{{ alertmanager_version }}"
+        state: directory
+        mode: "0755"
+
+    - name: Extract Alertmanager
+      ansible.builtin.unarchive:
+        src: "/tmp/alertmanager-{{ alertmanager_version }}.tar.gz"
+        dest: "/tmp/alertmanager-{{ alertmanager_version }}"
+        remote_src: true
+        extra_opts:
+          - "--strip-components=1"
+
+    - name: Install Alertmanager binary
+      ansible.builtin.copy:
+        src: "/tmp/alertmanager-{{ alertmanager_version }}/alertmanager"
+        dest: "{{ alertmanager_install_dir }}/alertmanager"
+        owner: "{{ alertmanager_user }}"
+        group: "{{ alertmanager_group }}"
+        mode: "0755"
+        remote_src: true
+
+    - name: Install amtool
+      ansible.builtin.copy:
+        src: "/tmp/alertmanager-{{ alertmanager_version }}/amtool"
+        dest: "{{ alertmanager_install_dir }}/amtool"
+        owner: "{{ alertmanager_user }}"
+        group: "{{ alertmanager_group }}"
+        mode: "0755"
+        remote_src: true
+
+    - name: Create Alertmanager configuration
+      ansible.builtin.copy:
+        dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
+        owner: "{{ alertmanager_user }}"
+        group: "{{ alertmanager_group }}"
+        mode: "0644"
+        content: |
+          global:
+            smtp_smarthost: 'smtp.gmail.com:587'
+            smtp_from: 'aptgetcorreo@gmail.com'
+            smtp_auth_username: 'aptgetcorreo@gmail.com'
+            smtp_auth_password: '{{ vault_smtp_password }}'
+            smtp_require_tls: true
+
+          route:
+            receiver: "email"
+
+          receivers:
+            - name: "email"
+              email_configs:
+                - to: "aptgetcorreo@gmail.com"
+                  send_resolved: true
+      notify:
+        - Restart Alertmanager  
+         
+    - name: Create Alertmanager systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/alertmanager.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Prometheus Alertmanager
+          Wants=network-online.target
+          After=network-online.target
+
+          [Service]
+          User={{ alertmanager_user }}
+          Group={{ alertmanager_group }}
+          Type=simple
+
+          ExecStart={{ alertmanager_install_dir }}/alertmanager \
+            --config.file={{ alertmanager_config_dir }}/alertmanager.yml \
+            --storage.path={{ alertmanager_data_dir }}
+
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+        - Restart Alertmanager
+
+    - name: Enable and start Alertmanager
+      ansible.builtin.systemd:
+        name: alertmanager
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Check Alertmanager status
+      ansible.builtin.command:
+        cmd: systemctl is-active alertmanager
+      register: alertmanager_status
+      changed_when: false
+
+    - name: Display Alertmanager status
+      ansible.builtin.debug:
+        msg: "Alertmanager status: {{ alertmanager_status.stdout }}"
+
+  handlers:
+
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Restart Alertmanager
+      ansible.builtin.systemd:
+        name: alertmanager
+        state: restarted
