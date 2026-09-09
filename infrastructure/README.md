@@ -97,9 +97,7 @@ The lab does not require permanently running cloud infrastructure.
 
 ## Design Goals
 
-The architecture is intentionally simple at this stage.
-
-Future iterations will introduce:
+The architecture includes:
 
 - Ansible automation
 - Containerized services
